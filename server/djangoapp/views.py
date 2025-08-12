@@ -15,7 +15,9 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from .populate import initiate
 from .models import CarMake, CarModel
-
+from .models import Dealership  
+from .models import Review 
+from .populate import initiate
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -83,28 +85,92 @@ def registration(request):
 # # Update the `get_dealerships` view to render the index page with
 # a list of dealerships
 # def get_dealerships(request):
-# ...
+def get_dealerships(request):
+    dealerships = Dealership.objects.all()
+    dealerships_list = [{
+        "id": dealer.id,
+        "name": dealer.name,
+        "full_name": dealer.name,
+        "city": dealer.city,
+        "address": dealer.address,
+        "zip": dealer.zip,
+        "state": dealer.state
+    } for dealer in dealerships]
+    return JsonResponse({"dealerships": dealerships_list})
+
 
 # Create a `get_dealer_reviews` view to render the reviews of a dealer
 # def get_dealer_reviews(request,dealer_id):
-# ...
-
-# Create a `get_dealer_details` view to render the dealer details
-# def get_dealer_details(request, dealer_id):
-# ...
-
+def get_dealer_reviews(request, dealer_id):
+    try:
+        reviews = Review.objects.filter(dealership=dealer_id)
+        reviews_list = [{
+            "id": review.id,
+            "name": review.name,
+            "review": review.review,
+            "purchase": review.purchase,
+            "purchase_date": review.purchase_date,
+            "car_make": review.car_make,
+            "car_model": review.car_model,
+            "car_year": review.car_year,
+            "sentiment": "neutral"  # You might want to add sentiment analysis
+        } for review in reviews]
+        return JsonResponse({"reviews": reviews_list})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 # Create a `add_review` view to submit a review
 # def add_review(request):
 # ...
+@csrf_exempt
+def add_review(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            review = Review.objects.create(
+                dealership_id=data['dealership'],
+                name=data['name'],
+                review=data['review'],
+                purchase=data.get('purchase', False),
+                purchase_date=data.get('purchase_date'),
+                car_make=data.get('car_make'),
+                car_model=data.get('car_model'),
+                car_year=data.get('car_year')
+            )
+            return JsonResponse({"status": "success", "review_id": review.id})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+# Create a `get_dealer_details` view to render the dealer details
+# def get_dealer_details(request, dealer_id):
+def get_dealer_details(request, dealer_id):
+    try:
+        dealer = Dealership.objects.get(id=dealer_id)
+        dealer_data = {
+            "id": dealer.id,
+            "name": dealer.name,
+            "city": dealer.city,
+            "address": dealer.address,
+            "zip": dealer.zip,
+            "state": dealer.state
+        }
+        return JsonResponse(dealer_data)
+    except Dealership.DoesNotExist:
+        return JsonResponse({"error": "Dealer not found"}, status=404)
+
+
 
 
 def get_cars(request):
-    count = CarMake.objects.filter().count()
-    print(count)
-    if(count == 0):
+    count = CarMake.objects.count()
+    print(f"[DEBUG] CarMake count before initiate(): {count}")
+    if count == 0:
+        print("[DEBUG] Calling initiate() to populate the database")
         initiate()
     car_models = CarModel.objects.select_related('car_make')
+    print(f"[DEBUG] Number of CarModel objects after initiate(): {car_models.count()}")
     cars = []
     for car_model in car_models:
+        print(f"[DEBUG] CarModel: {car_model.name}, CarMake: {car_model.car_make.name}")
         cars.append({"CarModel": car_model.name, "CarMake": car_model.car_make.name})
-    return JsonResponse({"CarModels":cars})
+    return JsonResponse({"CarModels": cars})

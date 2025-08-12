@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import CarMake, CarModel
+from .models import CarMake, CarModel, Dealership
 
 # Register models here
 admin.site.register(CarMake)
 admin.site.register(CarModel)
-
+admin.site.register(Dealership)
 
 # CarModelInline class
 

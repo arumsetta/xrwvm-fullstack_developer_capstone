@@ -1,5 +1,4 @@
 # Uncomment the following imports before adding the Model code
-
 from django.db import models
 from django.utils.timezone import now
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -33,3 +32,28 @@ class CarModel(models.Model):
     
     def __str__(self):
         return self.name
+
+
+class Dealership(models.Model):
+    name = models.CharField(max_length=100)
+    city = models.CharField(max_length=100)
+    address = models.CharField(max_length=200)
+    zip = models.CharField(max_length=10)
+    state = models.CharField(max_length=20)
+    
+    def __str__(self):
+        return self.name
+
+
+class Review(models.Model):
+    dealership = models.IntegerField()
+    name = models.CharField(max_length=100)
+    review = models.TextField()
+    purchase = models.BooleanField()
+    purchase_date = models.DateField(null=True, blank=True)
+    car_make = models.CharField(max_length=50, blank=True)
+    car_model = models.CharField(max_length=50, blank=True)
+    car_year = models.IntegerField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"Review by {self.name}"
