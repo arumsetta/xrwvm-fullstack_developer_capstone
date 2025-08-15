@@ -10,8 +10,9 @@ ENV APP=/app
 WORKDIR $APP
 
 # Copy requirements and install them
+COPY requirements.txt $APP/
 RUN pip3 install --upgrade pip
-RUN pip3 install -r ../../requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Copy the rest of the files
 COPY . $APP
